@@ -3,6 +3,7 @@ import time
 import random
 import math
 
+
 class PenClass:
 
     def __init__(self,x,y,head):
@@ -51,16 +52,37 @@ class PenClass:
     
     def deleteStamp(self,getstamp):
         self.pen.clearstamp(getstamp)
-   
+
+def penInit(obj,x,y,head):
+    #obj = turtle.Turtle()   # 初始化
+    obj.hideturtle()        # 海龟隐藏
+    obj.penup()             # 笔全程拿起（依赖 stamp）
+    obj.setpos(x,y)         # 设置初始位置
+    obj.speed(10)           # 移动速度：最快，因为不依赖移动来刷新
+    obj.resizemode("user")  # 用户自定义，为了设置形状
+    obj.shape("square")     # 设置形状
+    obj.shapesize(1, 1, 1)  # 大小 20*20，有 1 像素的边界
+    obj.setheading(head)    # 初始方向
+
+def penMove(obj,dir):
+    obj.right(obj.heading() - dir)
+    obj.forward(20)
+    astamp = obj.stamp()
+    obj.left(0)
+    return astamp
 
 class SnakeClass:
     
     def __init__(self,x,y):
-        self.head = PenClass(x-20,y,0)    # head，初始位置会向右一格
-        self.body = PenClass(x-100,y,0)   # body，紧跟着 head 的那一格，初始位置会向右一格
-        self.head.pen.color("red")       # head 全红色
-        self.body.pen.color("black")     # body 黑色
-        self.body.pen.pencolor("blue")   # body 蓝色边框
+        #self.head = PenClass(x-20,y,0)    # head，初始位置会向右一格
+        #self.body = PenClass(x-100,y,0)   # body，紧跟着 head 的那一格，初始位置会向右一格
+        self.head = turtle.Turtle()
+        self.body = turtle.Turtle()
+        penInit(self.head,x-20,y,0)
+        penInit(self.body,x-100,y,0)
+        self.head.color("red")       # head 全红色
+        self.body.color("black")     # body 黑色
+        self.body.pencolor("blue")   # body 蓝色边框
         self.vec = list()                # 存储 body stamp 的 list
         self.headx = x                  # 存储 head 的坐标
         self.heady = y
@@ -70,14 +92,15 @@ class SnakeClass:
         self.eatwait = 0                 # eat 前的计数器
 
         for i in range(4):
-            astamp = self.body.right()          # 右移同时盖章
+            astamp = penMove(self.body,0)          # 右移同时盖章
             self.vec.append(astamp)
-        self.headstamp = self.head.right()      # 存储头部的 stamp，注意盖章用右移实现
+        self.headstamp = penMove(self.head,0)      # 存储头部的 stamp，注意盖章用右移实现
         self.tempstamp1 = self.headstamp        # 一个用于存储 stamp 的 temp 变量
         self.tempstamp2 = self.headstamp        # 一个用于存储 stamp 的 temp 变量
-        self.head.pen.left(0)
+        self.head.left(0)
     
     def moveBody(self):                          # 移动 body
+        '''
         if (self.gesture == 0):                  # 加上新的 stamp        
             self.tempstamp2 = self.body.right()  # 方向为右
         elif (self.gesture == 90):
@@ -86,50 +109,65 @@ class SnakeClass:
             self.tempstamp2 = self.body.left()   # 方向为左
         else:
             self.tempstamp2 = self.body.down()   # 方向为下
+        '''
+        self.tempstamp2 = penMove(self.body,self.gesture)
         self.vec.append(self.tempstamp2)         # 将新的 stamp 加入list
         if (self.eating > 0):                    # 已经碰到了食物
             if (snake.eatwait > 0):                    # 计数器：尾巴离食物还有多少格
-                self.body.deleteStamp(self.vec.pop(0)) # 擦除尾部的 stamp
+                #self.body.deleteStamp(self.vec.pop(0)) # 擦除尾部的 stamp
+                self.body.clearstamp(self.vec.pop(0))
                 self.eatwait -= 1                
             else:
                 self.eating -=1                  # eat 的计数器。由于没有删除 stamp，蛇的长度增加了
         else:
-            self.body.deleteStamp(self.vec.pop(0))   # 将最旧的 stamp 移除
-    
+            #self.body.deleteStamp(self.vec.pop(0))   # 将最旧的 stamp 移除
+            self.body.clearstamp(self.vec.pop(0))
+
     def up(self):                                    # 移动 整个 snake
         if (self.heady < 221):                       # head 撞墙检测，撞墙则整体不移动
-            self.tempstamp1 = self.head.up()         # 移动 head
+            
+            #self.tempstamp1 = self.head.up()         # 移动 head
+            self.tempstamp1 = penMove(self.head,90)
             self.heady += 20                         # 更新 head 坐标
             self.moveBody()                          # 移动 body
             self.gesture = 90                         # 记录 head 的行为（给接下来 body 用）
-            self.head.deleteStamp(self.headstamp)    # 删除旧的 head stamp
+            #self.head.deleteStamp(self.headstamp)    # 删除旧的 head stamp
+            self.head.clearstamp(self.headstamp)
             self.headstamp = self.tempstamp1         # 更新 head stamp
     
     def down(self):
         if (self.heady > -221): 
-            self.tempstamp1 = self.head.down()
+            
+            #self.tempstamp1 = self.head.down()
+            self.tempstamp1 = penMove(self.head,270)
             self.heady -= 20
             self.moveBody()
             self.gesture = 270
-            self.head.deleteStamp(self.headstamp)
+            #self.head.deleteStamp(self.headstamp)
+            self.head.clearstamp(self.headstamp)
             self.headstamp = self.tempstamp1
     
     def left(self):
         if (self.headx > -221): 
-            self.tempstamp1 = self.head.left()
+            
+            #self.tempstamp1 = self.head.left()
+            self.tempstamp1 = penMove(self.head,180)
             self.headx -= 20
             self.moveBody()
             self.gesture = 180
-            self.head.deleteStamp(self.headstamp)
+            #self.head.deleteStamp(self.headstamp)
+            self.head.clearstamp(self.headstamp)
             self.headstamp = self.tempstamp1
     
     def right(self):
         if (self.headx < 221): 
-            self.tempstamp1 = self.head.right()
+            #self.tempstamp1 = self.head.right()
+            self.tempstamp1 = penMove(self.head,0)
             self.headx += 20
             self.moveBody()
             self.gesture = 0
-            self.head.deleteStamp(self.headstamp)
+            #self.head.deleteStamp(self.headstamp)
+            self.head.clearstamp(self.headstamp)
             self.headstamp = self.tempstamp1
     
     def eat(self,num):
@@ -154,11 +192,11 @@ class SnakeClass:
             self.direction = 270
     
     def result(self,ddd):
-        self.head.pen.color("orange")       # head 橙色
+        self.head.color("orange")       # head 橙色
         if (ddd):
-            self.head.pen.write("Win", False,font=("Arial", 24, "bold"))
+            self.head.write("Win", False,font=("Arial", 24, "bold"))
         else:
-            self.head.pen.write("Lose", False,font=("Arial", 24, "bold"))
+            self.head.write("Lose", False,font=("Arial", 24, "bold"))
 
 
 class MonsterClass(PenClass):
@@ -195,7 +233,7 @@ class MonsterClass(PenClass):
     
     def touch(self,headx,heady):                  
         return ((self.x - headx < 20.0)and(self.x - headx > -20.0)and(self.y - heady < 20.0)and(self.y - heady > -20))
- 
+
 pausing = True                 # 是否暂停             
 gameready = False              # 初始化是否完成
 
@@ -238,12 +276,7 @@ if __name__ == "__main__":
 
 
     fakeHead = turtle.Turtle()    # 假的头（因为 snake 在一个 class 里面集中实现了，这里为了方便）
-    fakeHead.hideturtle()         # 海龟隐藏
-    fakeHead.penup()              # 笔拿起（依赖 stamp）
-    fakeHead.setpos(0,0)          # 设置初始位置
-    fakeHead.resizemode("user")   # 用户自定义，为了设置形状
-    fakeHead.shape("square")      # 设置形状
-    fakeHead.shapesize(1, 1, 1)   # 大小 20*20，有 1 像素的边界
+    penInit(fakeHead,0,0,0)
     fakeHead.color("red")         # 海龟颜色
     fakeStamp = fakeHead.stamp()  # 盖章         
     fakeHead.left(0)              # 防 bug
