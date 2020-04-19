@@ -26,17 +26,6 @@ class PenClass:
         return astamp              # 传回刚才印出的 stamp
 
     def down(self):
-        '''
-        if (self.dir == 180):
-            self.pen.left(90)
-            self.dir = 270
-        elif (self.dir == 0):
-            self.pen.right(90)
-            self.dir = 270
-        elif (self.dir == 90):
-            self.pen.right(180)
-            self.dir = 270
-        '''
         self.pen.right(self.dir - 270)  # 转向，根据方向记录
         self.dir = 270
         self.pen.forward(20)
@@ -45,17 +34,6 @@ class PenClass:
         return astamp
     
     def left(self):
-        '''
-        if (self.dir == 90):
-            self.pen.left(90)
-            self.dir = 180
-        elif (self.dir == 270):
-            self.pen.right(90)
-            self.dir = 180
-        elif (self.dir == 0):
-            self.pen.right(180)
-            self.dir = 180
-        '''
         self.pen.right(self.dir - 180)  # 转向，根据方向记录
         self.dir = 180
         self.pen.forward(20)
@@ -64,17 +42,6 @@ class PenClass:
         return astamp
     
     def right(self):
-        '''
-        if (self.dir == 270):
-            self.pen.left(90)
-            self.dir = 0
-        if (self.dir == 90):
-            self.pen.right(90)
-            self.dir = 0
-        if (self.dir == 180):
-            self.pen.right(180)
-            self.dir = 0
-        '''
         self.pen.right(self.dir - 0)  # 转向，根据方向记录
         self.dir = 0
         self.pen.forward(20)
@@ -88,15 +55,15 @@ class PenClass:
 
 class SnakeClass:
     
-    def __init__(self):
-        self.head = PenClass(-20,0,0)    # head，初始位置会向右一格
-        self.body = PenClass(-100,0,0)   # body，紧跟着 head 的那一格，初始位置会向右一格
+    def __init__(self,x,y):
+        self.head = PenClass(x-20,y,0)    # head，初始位置会向右一格
+        self.body = PenClass(x-100,y,0)   # body，紧跟着 head 的那一格，初始位置会向右一格
         self.head.pen.color("red")       # head 全红色
         self.body.pen.color("black")     # body 黑色
         self.body.pen.pencolor("blue")   # body 蓝色边框
         self.vec = list()                # 存储 body stamp 的 list
-        self.headx = 0.0                  # 存储 head 的坐标
-        self.heady = 0.0
+        self.headx = x                  # 存储 head 的坐标
+        self.heady = y
         self.gesture = 0                 # 存储 head 的上一个动作,初始为右
         self.direction = 0               # 存储头部的方向
         self.eating = 0                  # 记录是否在 eat，也作为计数器
@@ -109,12 +76,6 @@ class SnakeClass:
         self.tempstamp1 = self.headstamp        # 一个用于存储 stamp 的 temp 变量
         self.tempstamp2 = self.headstamp        # 一个用于存储 stamp 的 temp 变量
         self.head.pen.left(0)
-    
-    def checkArea(self):                        # head 撞墙的检测
-        if ((self.headx > -241)and(self.heady > -241)and(self.headx < 241)and(self.heady < 241)):
-            return True
-        else:
-            return False
     
     def moveBody(self):                          # 移动 body
         if (self.gesture == 0):                  # 加上新的 stamp        
@@ -136,7 +97,7 @@ class SnakeClass:
             self.body.deleteStamp(self.vec.pop(0))   # 将最旧的 stamp 移除
     
     def up(self):                                    # 移动 整个 snake
-        if (self.checkArea()):                       # head 撞墙检测，撞墙则整体不移动
+        if (self.heady < 221):                       # head 撞墙检测，撞墙则整体不移动
             self.tempstamp1 = self.head.up()         # 移动 head
             self.heady += 20                         # 更新 head 坐标
             self.moveBody()                          # 移动 body
@@ -145,7 +106,7 @@ class SnakeClass:
             self.headstamp = self.tempstamp1         # 更新 head stamp
     
     def down(self):
-        if (self.checkArea()): 
+        if (self.heady > -221): 
             self.tempstamp1 = self.head.down()
             self.heady -= 20
             self.moveBody()
@@ -154,7 +115,7 @@ class SnakeClass:
             self.headstamp = self.tempstamp1
     
     def left(self):
-        if (self.checkArea()): 
+        if (self.headx > -221): 
             self.tempstamp1 = self.head.left()
             self.headx -= 20
             self.moveBody()
@@ -163,7 +124,7 @@ class SnakeClass:
             self.headstamp = self.tempstamp1
     
     def right(self):
-        if (self.checkArea()): 
+        if (self.headx < 221): 
             self.tempstamp1 = self.head.right()
             self.headx += 20
             self.moveBody()
@@ -175,16 +136,6 @@ class SnakeClass:
         if (self.eatwait == 0):
             self.eatwait = len(self.vec)
         eating += num
-    
-    def move(self):
-        if (self.direction == 0):
-            self.right()
-        elif (self.direction == 90):
-            self.up()
-        elif (self.direction == 180):
-            self.left()
-        else:
-            self.down()
     
     def setRight(self):
         if (self.direction != 180):
@@ -235,20 +186,35 @@ class MonsterClass(PenClass):
         self.stampStore = self.stampTemp
     
     def touch(self,headx,heady):
-        return (((self.x - headx < 20.0)and(self.x - headx > -20.0))or((self.y - heady < 20.0)and(self.y - heady > -20)))
+        return ((self.x - headx < 20.0)and(self.x - headx > -20.0)and(self.y - heady < 20.0)and(self.y - heady > -20))
+
+
+ 
+pausing = False                 # 是否暂停
+pauseDetect = 0
+
+
+def pauseChange():
+    global pausing
+    temppausing = not pausing
+    pausing = temppausing
+    return 0
 
 if __name__ == "__main__":
     turtle.setup(500, 500, 0, 0)
-    snake = SnakeClass()                 # 蛇
+    snake = SnakeClass(0.0,0.0)                 # 蛇
+    tempsnake = SnakeClass(-400.0,0.0) 
     monster = MonsterClass(-150,-150,0)  # 怪
     gaming = True                        # 游戏是否在进行
     eating = False                       # 是否在 eat
-    pause = False                        # 是否暂停
+    caught = False                       # 是否被怪追上
     snakeTime = 0                        # 用于 snake 的计数器
     snakeLevel = 80                      # 计数器的 bound
     monsterTime = 0
     monsterLevel = 30
     
+    turtle.onkey(pauseChange, "space")
+    #turtle.onkeypress(pauseChange, "space")
     turtle.onkey(snake.setUp, "Up")        # 按键响应
     turtle.onkey(snake.setDown, "Down")
     turtle.onkey(snake.setLeft, "Left")
@@ -258,17 +224,43 @@ if __name__ == "__main__":
     turtle.onkeypress(snake.setLeft, "Left")
     turtle.onkeypress(snake.setRight, "Right")
     turtle.listen()
-
-    for i in range(10000):
-        snakeTime += 1                
-        if (snakeTime == snakeLevel):
-            snake.move()
-            snakeTime = 0
-        monsterTime += 1
-        if (monsterTime == monsterLevel):
-            monster.move(snake.headx,snake.heady)
-            monsterTime = 0
-        time.sleep(0.003)
     
-
+    i = 0
+    while (True):
+        if (pausing):
+            tempsnake.up()
+            tempsnake.up()
+            tempsnake.left()
+            tempsnake.left()
+            tempsnake.down()
+            tempsnake.down()
+            tempsnake.left()
+            tempsnake.left()
+            print("waiting")
+            #turtle.listen()
+        else:
+            snakeTime += 1                
+            if (snakeTime == snakeLevel):
+                if (snake.direction == 0):
+                    snake.right()
+                elif (snake.direction == 90):
+                    snake.up()
+                elif (snake.direction == 180):
+                    snake.left()
+                else:
+                    snake.down()
+                snakeTime = 0
+            monsterTime += 1
+            if (monsterTime == monsterLevel):
+                monster.move(snake.headx,snake.heady)
+                monsterTime = 0
+            if (monster.touch(snake.headx,snake.heady)):
+                caught = True
+                break
+            i += 1
+            if (i == 10000):break
+            time.sleep(0.002)
+    
+    if (caught):
+        print("Lose")
     a = input()

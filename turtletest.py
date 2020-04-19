@@ -23,7 +23,7 @@ if __name__ == "__main__":
     a = t.xcor()
     b = t.ycor()
     print(a," ",b)
-    for i in range(11):
+    for i in range(3):
         t.stamp()
         t.fd(20)  # 直线前进
         t.stamp()
@@ -40,5 +40,7 @@ if __name__ == "__main__":
         t.stamp()
         time.sleep(0.1)
     '''
+    t.fd(9)
+    t.write("0", False, align="center",font=("Arial", 12, "normal"))
 
     a = input()
