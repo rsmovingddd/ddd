@@ -3,57 +3,7 @@ import time
 import random
 import math
 
-
-class PenClass:
-
-    def __init__(self,x,y,head):
-        self.pen = turtle.Turtle()   # 初始化
-        self.pen.hideturtle()        # 海龟隐藏
-        self.pen.penup()             # 笔全程拿起（依赖 stamp）
-        self.pen.setpos(x,y)         # 设置初始位置
-        self.pen.speed(10)           # 移动速度：最快，因为不依赖移动来刷新
-        self.pen.resizemode("user")  # 用户自定义，为了设置形状
-        self.pen.shape("square")     # 设置形状
-        self.pen.shapesize(1, 1, 1)  # 大小 20*20，有 1 像素的边界
-        self.pen.setheading(head)    # 初始方向
-        self.dir = head              # 记录方向的参数
-    
-    def up(self):
-        self.pen.right(self.dir - 90)  # 转向，根据方向记录
-        self.dir = 90
-        self.pen.forward(20)       # 前进一格宽度
-        astamp = self.pen.stamp()  # stamp 打印
-        self.pen.left(0)           # 规避 stamp 的 bug
-        return astamp              # 传回刚才印出的 stamp
-
-    def down(self):
-        self.pen.right(self.dir - 270)  # 转向，根据方向记录
-        self.dir = 270
-        self.pen.forward(20)
-        astamp = self.pen.stamp()
-        self.pen.left(0)
-        return astamp
-    
-    def left(self):
-        self.pen.right(self.dir - 180)  # 转向，根据方向记录
-        self.dir = 180
-        self.pen.forward(20)
-        astamp = self.pen.stamp()
-        self.pen.left(0)
-        return astamp
-    
-    def right(self):
-        self.pen.right(self.dir - 0)  # 转向，根据方向记录
-        self.dir = 0
-        self.pen.forward(20)
-        astamp = self.pen.stamp()
-        self.pen.left(0)
-        return astamp
-    
-    def deleteStamp(self,getstamp):
-        self.pen.clearstamp(getstamp)
-
-def penInit(obj,x,y,head):
+def penInit(obj,x,y):
     #obj = turtle.Turtle()   # 初始化
     obj.hideturtle()        # 海龟隐藏
     obj.penup()             # 笔全程拿起（依赖 stamp）
@@ -62,177 +12,69 @@ def penInit(obj,x,y,head):
     obj.resizemode("user")  # 用户自定义，为了设置形状
     obj.shape("square")     # 设置形状
     obj.shapesize(1, 1, 1)  # 大小 20*20，有 1 像素的边界
-    obj.setheading(head)    # 初始方向
 
 def penMove(obj,dir):
-    obj.right(obj.heading() - dir)
-    obj.forward(20)
-    astamp = obj.stamp()
-    obj.left(0)
+    obj.right(obj.heading() - dir) # 转向
+    obj.forward(20)                # 向前
+    astamp = obj.stamp()           # 获取 stamp
+    obj.left(0)                    # 规避 bug
     return astamp
 
-class SnakeClass:
-    
-    def __init__(self,x,y):
-        #self.head = PenClass(x-20,y,0)    # head，初始位置会向右一格
-        #self.body = PenClass(x-100,y,0)   # body，紧跟着 head 的那一格，初始位置会向右一格
-        self.head = turtle.Turtle()
-        self.body = turtle.Turtle()
-        penInit(self.head,x-20,y,0)
-        penInit(self.body,x-100,y,0)
-        self.head.color("red")       # head 全红色
-        self.body.color("black")     # body 黑色
-        self.body.pencolor("blue")   # body 蓝色边框
-        self.vec = list()                # 存储 body stamp 的 list
-        self.headx = x                  # 存储 head 的坐标
-        self.heady = y
-        self.gesture = 0                 # 存储 head 的上一个动作,初始为右
-        self.direction = 0               # 存储头部的方向
-        self.eating = 0                  # 记录是否在 eat，也作为计数器
-        self.eatwait = 0                 # eat 前的计数器
+direction = 0
+vec = list()                # 存储 body stamp 的 list
+gesture = 0                 # 存储 head 的上一个动作,初始为右
+eating = 0                  # 记录是否在 eat，也作为计数器
+eatwait = 0                 # eat 前的计数器
+headStamp = 0
 
-        for i in range(4):
-            astamp = penMove(self.body,0)          # 右移同时盖章
-            self.vec.append(astamp)
-        self.headstamp = penMove(self.head,0)      # 存储头部的 stamp，注意盖章用右移实现
-        self.tempstamp1 = self.headstamp        # 一个用于存储 stamp 的 temp 变量
-        self.tempstamp2 = self.headstamp        # 一个用于存储 stamp 的 temp 变量
-        self.head.left(0)
+def snakeMove(head,body):
+    global direction
+    global vec
+    global gesture
+    global eating
+    global eatwait
+    global headStamp
+    directionGet = direction
+    if ((directionGet == 90) and (head.ycor() > 221)): return 0
+    if ((directionGet == 270) and (head.ycor() < -221)): return 0
+    if ((directionGet == 180) and (head.xcor() < -221)): return 0
+    if ((directionGet == 0) and (head.xcor() > 221)): return 0
+    tempstamp1 = penMove(head,directionGet)
+    tempstamp2 = penMove(body,gesture)
     
-    def moveBody(self):                          # 移动 body
-        '''
-        if (self.gesture == 0):                  # 加上新的 stamp        
-            self.tempstamp2 = self.body.right()  # 方向为右
-        elif (self.gesture == 90):
-            self.tempstamp2 = self.body.up()     # 方向为上
-        elif (self.gesture == 180):
-            self.tempstamp2 = self.body.left()   # 方向为左
+    vec.append(tempstamp2)         # 将新的 stamp 加入list
+    if (eating > 0):                    # 已经碰到了食物
+        if (eatwait > 0):                    # 计数器：尾巴离食物还有多少格
+            body.clearstamp(vec.pop(0))      # 擦除尾部的 stamp
+            eatwait -= 1                
         else:
-            self.tempstamp2 = self.body.down()   # 方向为下
-        '''
-        self.tempstamp2 = penMove(self.body,self.gesture)
-        self.vec.append(self.tempstamp2)         # 将新的 stamp 加入list
-        if (self.eating > 0):                    # 已经碰到了食物
-            if (snake.eatwait > 0):                    # 计数器：尾巴离食物还有多少格
-                #self.body.deleteStamp(self.vec.pop(0)) # 擦除尾部的 stamp
-                self.body.clearstamp(self.vec.pop(0))
-                self.eatwait -= 1                
-            else:
-                self.eating -=1                  # eat 的计数器。由于没有删除 stamp，蛇的长度增加了
-        else:
-            #self.body.deleteStamp(self.vec.pop(0))   # 将最旧的 stamp 移除
-            self.body.clearstamp(self.vec.pop(0))
+            eating -=1                  # eat 的计数器。由于没有删除 stamp，蛇的长度增加了
+    else:
+        body.clearstamp(vec.pop(0))     # 将最旧的 stamp 移除
+     
+    head.clearstamp(headStamp)     # 删除旧的 head stamp
+    headStamp = tempstamp1         # 更新 head stamp
+    gesture = directionGet
 
-    def up(self):                                    # 移动 整个 snake
-        if (self.heady < 221):                       # head 撞墙检测，撞墙则整体不移动
-            
-            #self.tempstamp1 = self.head.up()         # 移动 head
-            self.tempstamp1 = penMove(self.head,90)
-            self.heady += 20                         # 更新 head 坐标
-            self.moveBody()                          # 移动 body
-            self.gesture = 90                         # 记录 head 的行为（给接下来 body 用）
-            #self.head.deleteStamp(self.headstamp)    # 删除旧的 head stamp
-            self.head.clearstamp(self.headstamp)
-            self.headstamp = self.tempstamp1         # 更新 head stamp
-    
-    def down(self):
-        if (self.heady > -221): 
-            
-            #self.tempstamp1 = self.head.down()
-            self.tempstamp1 = penMove(self.head,270)
-            self.heady -= 20
-            self.moveBody()
-            self.gesture = 270
-            #self.head.deleteStamp(self.headstamp)
-            self.head.clearstamp(self.headstamp)
-            self.headstamp = self.tempstamp1
-    
-    def left(self):
-        if (self.headx > -221): 
-            
-            #self.tempstamp1 = self.head.left()
-            self.tempstamp1 = penMove(self.head,180)
-            self.headx -= 20
-            self.moveBody()
-            self.gesture = 180
-            #self.head.deleteStamp(self.headstamp)
-            self.head.clearstamp(self.headstamp)
-            self.headstamp = self.tempstamp1
-    
-    def right(self):
-        if (self.headx < 221): 
-            #self.tempstamp1 = self.head.right()
-            self.tempstamp1 = penMove(self.head,0)
-            self.headx += 20
-            self.moveBody()
-            self.gesture = 0
-            #self.head.deleteStamp(self.headstamp)
-            self.head.clearstamp(self.headstamp)
-            self.headstamp = self.tempstamp1
-    
-    def eat(self,num):
-        if (self.eatwait == 0):
-            self.eatwait = len(self.vec)
-        self.eating += num
-    
-    def setRight(self):
-        if (self.direction != 180):
-            self.direction = 0
-    
-    def setLeft(self):
-        if (self.direction != 0):   
-            self.direction = 180
-    
-    def setUp(self):
-        if (self.direction != 270):    
-            self.direction = 90
-    
-    def setDown(self):
-        if (self.direction != 90):    
-            self.direction = 270
-    
-    def result(self,ddd):
-        self.head.color("orange")       # head 橙色
-        if (ddd):
-            self.head.write("Win", False,font=("Arial", 24, "bold"))
-        else:
-            self.head.write("Lose", False,font=("Arial", 24, "bold"))
+def setRight():
+    global direction
+    if (direction != 180):
+        direction = 0
 
+def setLeft():
+    global direction
+    if (direction != 0):   
+        direction = 180
 
-class MonsterClass(PenClass):
+def setUp():
+    global direction
+    if (direction != 270):    
+        direction = 90
 
-    def __init__(self, x, y, head):
-        super().__init__(x, y, head)
-        self.pen.color("purple")             # 颜色紫色
-        self.x = x                           # 存储坐标
-        self.y = y                           
-        self.stampStore = self.pen.stamp()   # 存储 stamp
-        self.pen.left(0)
-        self.stampTemp = self.stampStore     # stamp temp
-        self.rate = 0.0                        # 存储得到的 random 变量
-        self.temp1 = 0.0                       # int temp
-        self.speed = 20                    # 控制速度的参数
-    
-    def setSpeed(self,n):
-        self.speed = n
-
-    def move(self,headx,heady):
-        self.rate = random.random() + 1           # random 值，0.5 到 1.5
-        self.temp1 = (self.x - headx)*(self.x - headx) + (self.y - heady)*(self.y - heady)
-        self.temp1 = math.sqrt(self.temp1)
-        self.temp1 = self.speed/(self.temp1*10)  # 计算比值，用于斜线移动
-        if (self.x != headx):
-            self.x += (headx - self.x)*self.temp1*self.rate # 新坐标
-        if (self.y != heady):
-            self.y += (heady - self.y)*self.temp1*self.rate
-        self.pen.setpos(self.x,self.y)                      # 移动到新位置
-        self.stampTemp = self.pen.stamp()                   # 新 stamp
-        self.pen.left(0)
-        self.pen.clearstamp(self.stampStore)                # 擦除旧的 stamp
-        self.stampStore = self.stampTemp
-    
-    def touch(self,headx,heady):                  
-        return ((self.x - headx < 20.0)and(self.x - headx > -20.0)and(self.y - heady < 20.0)and(self.y - heady > -20))
+def setDown():
+    global direction
+    if (direction != 90):    
+        direction = 270
 
 pausing = True                 # 是否暂停             
 gameready = False              # 初始化是否完成
@@ -265,31 +107,31 @@ if __name__ == "__main__":
     turtle.onclick(gameBegin)    # 绑定鼠标
     
     words = turtle.Turtle()      # 一堆说明
-    words.hideturtle()           # 海龟隐藏
-    words.penup()                # 笔拿起（依赖 stamp）
-    words.setpos(-220,100)       # 设置初始位置
-    words.resizemode("user")     # 用户自定义，为了设置形状
-    words.shape("square")        # 设置形状
-    words.shapesize(1, 1, 1)     # 大小 20*20，有 1 像素的边界
+    penInit(words,-220,100)
     words.color("black")         # 字体颜色
     words.write("Welcome to Kinley's version of snake...\nYou are going to use the 4 arrow keys to move the snake\naround the screen, trying to consume all the food items \nbefore the monster catches you...\n\nClick anywhere on the screen to start the game,have fun!!",False,'left',font=('Arial',12,'bold'))#字体大小调下(font=(字体名称，大小，类型））
 
-
-    fakeHead = turtle.Turtle()    # 假的头（因为 snake 在一个 class 里面集中实现了，这里为了方便）
-    penInit(fakeHead,0,0,0)
-    fakeHead.color("red")         # 海龟颜色
-    fakeStamp = fakeHead.stamp()  # 盖章         
-    fakeHead.left(0)              # 防 bug
+    head = turtle.Turtle()
+    penInit(head,-20,0)
+    head.setheading(0)
+    head.color("red")       # head 全红色
+    headStamp = penMove(head,0)
     
-    tempsnake = SnakeClass(-400.0,0.0)    # 边界外再搞条蛇，为了绕过 bug 实现暂停
-    monster = MonsterClass(-150,-150,0)   # 怪
+    pausePen = turtle.Turtle()
+    penInit(pausePen,300,0)
+
+    monster = turtle.Turtle()
+    penInit(monster,-150,-150)
+    monster.color("purple")             # 颜色紫色
+    monsterStampStore = monster.stamp()   # 存储 stamp
+    monster.left(0)
+    monsterStampTemp = monsterStampStore
+    
     eating = False                        # 是否在 eat
     caught = False                        # 是否被怪追上
-    
 
     # 双 timer 异步进行对于 python 单线程来说是极端现实的，唯一可行的实现方式是，使用同一个 timer，
     # timer 给得细一些，然后让各个 object 在不同的时间动作
-    
     snakeTime = 0                         # 用于 snake 的计数器
     snakeLevel = 80                       # 计数器的 bound
     monsterTime = 0                       # 用于 monster 的计数器
@@ -299,53 +141,50 @@ if __name__ == "__main__":
 
     while (True):           # 等待单击后游戏开始，这么写是为了绕过 bug 实现暂停功能
         if (pausing):
-            tempsnake.up()  # 边界外的蛇疯狂游走
-            tempsnake.up()
-            tempsnake.left()
-            tempsnake.left()
-            tempsnake.down()
-            tempsnake.down()
-            tempsnake.left()
-            tempsnake.left()
-            print("waiting")
-            #turtle.listen()
+            penMove(pausePen,0)
+            #print("waiting")
         else:
             break
     turtle.title("                                                 Snake")  # 窗口标题
-    fakeHead.clearstamp(fakeStamp)  # 把假的头拿掉
+    fakeHead = head.stamp()
+    fakeMonster = monster.stamp()
     words.clear()                   # 删掉开场说明
 
-    snake = SnakeClass(0.0,0.0)          # 蛇 class
+    #snake = SnakeClass(0.0,0.0)          # 蛇 class
+    
+    body = turtle.Turtle()
+    penInit(body,-100,0)
+    
+    body.setheading(0)
+    
+    body.color("black")     # body 黑色
+    body.pencolor("blue")   # body 蓝色边框
+    
+    for i in range(4):
+        astamp = penMove(body,0)          # 右移同时盖章
+        vec.append(astamp)
+
     turtle.onkey(pauseChange, "space")
-    turtle.onkey(snake.setUp, "Up")        # 按键响应
-    turtle.onkey(snake.setDown, "Down")
-    turtle.onkey(snake.setLeft, "Left")
-    turtle.onkey(snake.setRight, "Right")
-    turtle.onkeypress(snake.setUp, "Up")
-    turtle.onkeypress(snake.setDown, "Down")
-    turtle.onkeypress(snake.setLeft, "Left")
-    turtle.onkeypress(snake.setRight, "Right")
+    turtle.onkey(setUp, "Up")        # 按键响应
+    turtle.onkey(setDown, "Down")
+    turtle.onkey(setLeft, "Left")
+    turtle.onkey(setRight, "Right")
+    turtle.onkeypress(setUp, "Up")
+    turtle.onkeypress(setDown, "Down")
+    turtle.onkeypress(setLeft, "Left")
+    turtle.onkeypress(setRight, "Right")
     turtle.listen()
     
     foods = list()           # 存放所有 food turtle 的 list
     food1 = turtle.Turtle()  # 建立所有的 food turtle
-    food1.hideturtle()
     food2 = turtle.Turtle()
-    food2.hideturtle()
     food3 = turtle.Turtle()
-    food3.hideturtle()
     food4 = turtle.Turtle()
-    food4.hideturtle()
     food5 = turtle.Turtle()
-    food5.hideturtle()
     food6 = turtle.Turtle()
-    food6.hideturtle()
     food7 = turtle.Turtle()
-    food7.hideturtle()
     food8 = turtle.Turtle()
-    food8.hideturtle()
     food9 = turtle.Turtle()
-    food9.hideturtle()
     foods.append(food1)      # 放入 food list
     foods.append(food2)
     foods.append(food3)
@@ -361,15 +200,7 @@ if __name__ == "__main__":
     foodExist = [0,1,2,3,4,5,6,7,8]      # 有哪些食物还被剩下，编号也可用于其他 list 的定位，一举两得
     
     for i in range(9):
-        #foods[i].hideturtle()                      # 海龟隐藏
-        foods[i].penup()                            # 笔全程拿起（依赖 stamp）
-        foods[i].setpos(foodx[i]+2,foody[i]-10)     # 设置 turtle 位置，为了让打印对上食物定下的位置，加了偏移量
-        foods[i].speed(10)                          # 移动速度：最快，因为不依赖移动来刷新
-        foods[i].resizemode("user")                 # 用户自定义，为了设置形状
-        foods[i].shape("square")                    # 设置形状
-        foods[i].shapesize(1, 1, 1)                 # 大小 20*20，有 1 像素的边界
-        #foods[i].color("white")                    # 海龟颜色
-        foods[i].setheading(270)                    # 初始方向
+        penInit(foods[i],foodx[i]+2,foody[i]-10)
         foods[i].write(i+1, False, align="center",font=("Arial", 12, "normal"))   # 标注食物编号
     
     # 各种时间戳
@@ -378,17 +209,12 @@ if __name__ == "__main__":
     pauseCut1 = 0.0          # 用于暂停时间计算
     pauseCut2 = 0.0
     timeNow = 0.0            # 现在的时间
+    head.clearstamp(fakeHead)
+    monster.clearstamp(fakeMonster)
     while (True):
         if (pausing):        # 绕开 bug 实现暂停
-            tempsnake.up()   # 边界外的蛇疯狂游走
-            tempsnake.up()
-            tempsnake.left()
-            tempsnake.left()
-            tempsnake.down()
-            tempsnake.down()
-            tempsnake.left()
-            tempsnake.left()
-            print("waiting")
+            penMove(pausePen,0)
+            #print("waiting")
             if (pauseCut1 == 0.0):        # 计算暂停时间
                 pauseCut1 = timeNow
             else:
@@ -397,30 +223,35 @@ if __name__ == "__main__":
             timePaused = pauseCut2 - pauseCut1 # 累加
         else:
             snakeTime += 1                  # 蛇的计数器  
-            if (snake.eating == 0):
+            if (eating == 0):
                 snakeLevel = 80             
             else:
                 snakeLevel = 120            # 在吃，则加高 bound，拖慢蛇的速度
             if (snakeTime == snakeLevel):   # count 到 snake 该走了
-                if (snake.direction == 0):  # 走的方向
-                    snake.right()
-                elif (snake.direction == 90):
-                    snake.up()
-                elif (snake.direction == 180):
-                    snake.left()
-                else:
-                    snake.down()
-                snakeTime = 0   # 计数器清零
-            for i in foodExist: 
-                if ((foodx[i] - snake.headx < 1)and(foodx[i] - snake.headx > -1)and(foody[i] - snake.heady < 1)and(foody[i] - snake.heady > -1)):
-                    foods[i].clear()          # check 一下有没有食物被吃掉
-                    foodExist.remove(i)
-                    snake.eat(i+1)
+                snakeTime = 0
+                snakeMove(head,body)
+                for i in foodExist: 
+                    if ((foodx[i] - head.xcor() < 1)and(foodx[i] - head.xcor() > -1)and(foody[i] - head.ycor() < 1)and(foody[i] - head.ycor() > -1)):
+                        foods[i].clear()          # check 一下有没有食物被吃掉
+                        foodExist.remove(i)
+                        if (eatwait == 0):
+                            eatwait = len(vec)
+                        eating += i+1
             monsterTime += 1                              # 怪的计数器
             if (monsterTime == monsterLevel):             # 怪该走了
-                monster.move(snake.headx,snake.heady)
+                # monster 的 speed 是 2
+                temp1 = 1/math.sqrt((monster.xcor() - head.xcor())*(monster.xcor() - head.xcor()) + (monster.ycor() - head.ycor())*(monster.ycor() - head.ycor()))
+                temp2 = random.random() + 1
+                if (monster.xcor() != head.xcor()):
+                    monster.setx(monster.xcor() + (head.xcor() - monster.xcor())*temp1*temp2) # 新坐标
+                if (monster.ycor() != head.ycor()):
+                    monster.sety(monster.ycor() + (head.ycor() - monster.ycor())*temp1*temp2)
+                monsterStampTemp = monster.stamp()                   # 新 stamp
+                monster.left(0)
+                monster.clearstamp(monsterStampStore)                # 擦除旧的 stamp
+                monsterStampStore = monsterStampTemp
                 monsterTime = 0                           # 怪的计数器清零
-            if (monster.touch(snake.headx,snake.heady)):
+            if ((monster.xcor() - head.xcor() < 20.0)and(monster.xcor() - head.xcor() > -20.0)and(monster.ycor() - head.ycor() < 20.0)and(monster.ycor() - head.ycor() > -20)):
                 caught = True                             # 检测有没有捉到 head
                 break                                     # 游戏结束，输了
             if (len(foodExist) == 0): break  # 食物被吃光了，赢了
@@ -429,10 +260,10 @@ if __name__ == "__main__":
             pauseCut1 = 0.0                  # 为了让 pause 时间统计辨认是否需要累加
             turtle.title("                              Snake:   Contacted: %d   Time: %d"%((9-len(foodExist)),timeNow - timeBegin - timePaused))
     
+    head.color("yellow")       # head 橙色
     if (caught):            # 判断输赢
-        snake.result(False)
+        head.write("Lose", False,font=("Arial", 24, "bold"))
     else:
-        snake.result(True)
+        head.write("Win", False,font=("Arial", 24, "bold"))
 
-    #time.sleep(10)
     turtle.exitonclick()    # 单击鼠标退出
