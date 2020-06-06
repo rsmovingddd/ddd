@@ -149,14 +149,10 @@ if __name__ == "__main__":
     fakeHead = head.stamp()
     fakeMonster = monster.stamp()
     words.clear()                   # 删掉开场说明
-
-    #snake = SnakeClass(0.0,0.0)          # 蛇 class
     
     body = turtle.Turtle()
     penInit(body,-100,0)
-    
     body.setheading(0)
-    
     body.color("black")     # body 黑色
     body.pencolor("blue")   # body 蓝色边框
     
