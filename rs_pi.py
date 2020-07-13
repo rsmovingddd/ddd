@@ -4,7 +4,7 @@ import time
 ser = serial.Serial('/dev/ttyUSB0',9600,timeout=1)  # check if there exists the file to confirm if connection is maintained
 
 '''''''''''
-Function: paraQuerySingle()
+Function: paraQueryAll()
 output: a list which has 12 variables, containing all the results
         result[0]: humidity 0.1%RH
         result[1]: temparature 0.1°C
